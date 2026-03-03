@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import api from "@/src/lib/api";
 import type { Vehicle } from "@/src/types/vehicle";
 
@@ -8,13 +9,14 @@ const FILTERS = ["All", "Sedan", "SUV", "Van"] as const;
 type Filter = (typeof FILTERS)[number];
 
 export default function HomePage() {
+  const router = useRouter();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<Filter>("All");
 
   useEffect(() => {
     api
-      .get<Vehicle[]>("/api/vehicles?status=available")
+      .get("/api/vehicles?status=available")
       .then((res) => {
         const data = res.data;
         setVehicles(Array.isArray(data) ? data : (data?.data ?? data?.vehicles ?? []));
@@ -89,7 +91,7 @@ export default function HomePage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((vehicle) => (
-              <VehicleCard key={vehicle.car_id} vehicle={vehicle} />
+              <VehicleCard key={vehicle.car_id} vehicle={vehicle} onBook={() => router.push(`/booking/${vehicle.car_id}`)} />
             ))}
           </div>
         )}
@@ -98,7 +100,7 @@ export default function HomePage() {
   );
 }
 
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+function VehicleCard({ vehicle, onBook }: { vehicle: Vehicle; onBook: () => void }) {
   return (
     <div className="flex flex-col rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
       {/* Image */}
@@ -143,7 +145,10 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
         </div>
 
         {/* Book Now button */}
-        <button className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+        <button
+          onClick={onBook}
+          className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+        >
           Book Now
         </button>
       </div>
