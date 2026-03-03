@@ -18,7 +18,14 @@ export type Reservation = {
     brand: string
     model: string
     year: number
+    plate_number?: string
     rate_per_day: number
     image: string | null
+  }
+  user?: {
+    first_name: string
+    last_name: string
+    email: string
+    phone_number?: string
   }
 }
