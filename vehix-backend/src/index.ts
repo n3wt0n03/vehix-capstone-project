@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import { supabase } from './lib/supabase'
 import authRoutes from './routes/auth.routes'
+import vehicleRoutes from './routes/vehicle.routes'
 
 dotenv.config()
 
@@ -23,6 +24,7 @@ app.get('/api/health', async (req, res) => {
 })
 
 app.use('/api/auth', authRoutes)
+app.use('/api/vehicles', vehicleRoutes)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
