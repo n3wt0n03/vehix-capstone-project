@@ -19,7 +19,7 @@ export default function DashboardPage() {
       return;
     }
 
-    const role = user.user_roles?.role_name as string | undefined;
+    const role = (user.user_roles as { role_name?: string } | undefined)?.role_name;
     if (role !== "admin" && role !== "staff") {
       console.log("[dashboard] no session, redirecting to login");
       router.replace("/login");

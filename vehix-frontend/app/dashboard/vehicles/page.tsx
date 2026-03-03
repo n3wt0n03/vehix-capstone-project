@@ -10,7 +10,7 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     api
-      .get<Vehicle[]>("/api/vehicles")
+      .get("/api/vehicles")
       .then((res) => {
         const data = res.data;
         setVehicles(Array.isArray(data) ? data : (data?.data ?? data?.vehicles ?? []));
