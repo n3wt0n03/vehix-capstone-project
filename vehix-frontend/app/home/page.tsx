@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/src/lib/api";
 import type { Vehicle } from "@/src/types/vehicle";
+import CustomerNavbar from "@/src/components/CustomerNavbar";
 
 const FILTERS = ["All", "Sedan", "SUV", "Van"] as const;
 type Filter = (typeof FILTERS)[number];
@@ -33,16 +34,9 @@ export default function HomePage() {
         );
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="mx-auto max-w-7xl px-6 py-4">
-          <span className="text-xl font-bold text-gray-900 tracking-tight">
-            Vehix
-          </span>
-        </div>
-      </header>
-
+    <>
+      <CustomerNavbar />
+      <main className="min-h-screen bg-gray-50 pt-16">
       <div className="mx-auto max-w-7xl px-6 py-8">
         {/* Page title */}
         <div className="mb-6">
@@ -97,6 +91,7 @@ export default function HomePage() {
         )}
       </div>
     </main>
+    </>
   );
 }
 
