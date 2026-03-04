@@ -5,13 +5,16 @@ import {
   getAllReservations,
   getReservationById,
   updateReservationStatus,
+  checkAvailability,
 } from '../controllers/reservation.controller';
 import { requireAuth, requireRole } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// /my must be registered before /:id to prevent Express matching "my" as an id
+// Static routes must be registered before /:id to prevent Express
+// from matching literal strings ("my", "availability") as id params.
 router.get('/my', requireAuth, getMyReservations);
+router.get('/availability', checkAvailability);
 router.get('/', requireAuth, requireRole('admin', 'staff'), getAllReservations);
 router.get('/:id', requireAuth, getReservationById);
 router.post('/', requireAuth, createReservation);
