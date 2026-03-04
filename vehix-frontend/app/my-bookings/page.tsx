@@ -39,10 +39,10 @@ export default function MyBookingsPage() {
             Vehix
           </span>
           <button
-            onClick={() => router.push("/home")}
+            onClick={() => router.push("/fleet")}
             className="text-sm text-blue-600 hover:underline"
           >
-            ← Browse Vehicles
+            ← Browse Fleet
           </button>
         </div>
       </header>
@@ -71,7 +71,7 @@ export default function MyBookingsPage() {
               Browse available vehicles and make your first booking.
             </p>
             <button
-              onClick={() => router.push("/home")}
+              onClick={() => router.push("/fleet")}
               className="mt-4 rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
             >
               Browse Vehicles
