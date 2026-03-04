@@ -59,24 +59,26 @@ export default function CustomerNavbar() {
 
   const navLinks = (
     <>
-      <button
-        onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); setMenuOpen(false); }}
+      <Link
+        href="/"
+        onClick={() => setMenuOpen(false)}
         className="text-sm font-medium text-slate-700 hover:text-blue-600 transition"
       >
         Home
-      </button>
+      </Link>
       <button
         onClick={() => scrollTo("about")}
         className="text-sm font-medium text-slate-700 hover:text-blue-600 transition"
       >
         About Us
       </button>
-      <button
-        onClick={() => scrollTo("fleet")}
+      <Link
+        href="/fleet"
+        onClick={() => setMenuOpen(false)}
         className="text-sm font-medium text-slate-700 hover:text-blue-600 transition"
       >
         Fleet
-      </button>
+      </Link>
     </>
   );
 
