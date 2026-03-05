@@ -54,7 +54,6 @@ export async function createVehicle(req: Request, res: Response): Promise<void> 
     status,
     current_millage,
     image,
-    description,
   } = req.body;
 
   if (!model || !brand || !year || !plate_number || !rate_per_day) {
@@ -76,7 +75,6 @@ export async function createVehicle(req: Request, res: Response): Promise<void> 
       status: status ?? 'available',
       current_millage: current_millage ?? null,
       image: image ?? null,
-      description: description ?? null,
     })
     .select('*')
     .single();
@@ -103,7 +101,6 @@ export async function updateVehicle(req: Request, res: Response): Promise<void> 
     status,
     current_millage,
     image,
-    description,
   } = req.body;
 
   const { data, error } = await supabase
@@ -120,7 +117,6 @@ export async function updateVehicle(req: Request, res: Response): Promise<void> 
       status,
       current_millage,
       image,
-      description,
     })
     .eq('car_id', id)
     .select('*')
@@ -162,15 +158,47 @@ export async function updateVehicleStatus(req: Request, res: Response): Promise<
 export async function deleteVehicle(req: Request, res: Response): Promise<void> {
   const { id } = req.params;
 
-  const { error } = await supabase
+  // Check vehicle exists
+  const { data: car, error: carError } = await supabase
+    .from('car')
+    .select('car_id')
+    .eq('car_id', id)
+    .single();
+
+  if (carError || !car) {
+    res.status(404).json({ error: 'Vehicle not found.' });
+    return;
+  }
+
+  // Check for active reservations in reservation_lines
+  const { data: activeLines, error: linesError } = await supabase
+    .from('reservation_lines')
+    .select('car_id')
+    .eq('car_id', id)
+    .in('status', ['pending', 'approved']);
+
+  if (linesError) {
+    res.status(500).json({ error: 'Failed to check active reservations.', detail: linesError.message });
+    return;
+  }
+
+  if (activeLines && activeLines.length > 0) {
+    res.status(400).json({
+      error: 'Cannot delete vehicle with active reservations. Please resolve all pending or approved bookings first.',
+    });
+    return;
+  }
+
+  // Safe to delete
+  const { error: deleteError } = await supabase
     .from('car')
     .delete()
     .eq('car_id', id);
 
-  if (error) {
-    res.status(500).json({ error: 'Failed to delete vehicle.', detail: error.message });
+  if (deleteError) {
+    res.status(500).json({ error: 'Failed to delete vehicle.', detail: deleteError.message });
     return;
   }
 
-  res.status(204).send();
+  res.status(200).json({ message: 'Vehicle deleted successfully.' });
 }
