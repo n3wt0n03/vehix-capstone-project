@@ -190,15 +190,20 @@ export default function ReservationDetailPage() {
             <DetailRow
               label="Full Name"
               value={
-                customer
+                reservation.renter_first_name
+                  ? `${reservation.renter_first_name} ${reservation.renter_last_name}`
+                  : customer
                   ? `${customer.first_name} ${customer.last_name}`
                   : "—"
               }
             />
-            <DetailRow label="Email" value={customer?.email ?? "—"} />
+            <DetailRow
+              label="Email"
+              value={reservation.renter_email ?? customer?.email ?? "—"}
+            />
             <DetailRow
               label="Phone"
-              value={customer?.phone_number ?? "—"}
+              value={reservation.renter_phone ?? customer?.phone_number ?? "—"}
             />
           </Section>
 
