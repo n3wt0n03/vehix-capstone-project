@@ -1,14 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "@/src/lib/api";
 import type { Vehicle } from "@/src/types/vehicle";
+import VehicleModal from "@/src/components/VehicleModal";
+import DeleteVehicleModal from "@/src/components/DeleteVehicleModal";
 
 export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  // Modal state
+  const [addOpen, setAddOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Vehicle | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Vehicle | null>(null);
+
+  const fetchVehicles = useCallback(() => {
+    setLoading(true);
     api
       .get("/api/vehicles")
       .then((res) => {
@@ -19,6 +27,8 @@ export default function VehiclesPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => { fetchVehicles(); }, [fetchVehicles]);
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-6 py-8">
@@ -26,11 +36,12 @@ export default function VehiclesPage() {
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Vehicles</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage your vehicle fleet.
-            </p>
+            <p className="mt-1 text-sm text-gray-500">Manage your vehicle fleet.</p>
           </div>
-          <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition">
+          <button
+            onClick={() => setAddOpen(true)}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition"
+          >
             + Add Vehicle
           </button>
         </div>
@@ -40,34 +51,19 @@ export default function VehiclesPage() {
           {loading ? (
             <div className="flex items-center justify-center py-24">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-              <span className="ml-3 text-sm text-gray-500">
-                Loading vehicles…
-              </span>
+              <span className="ml-3 text-sm text-gray-500">Loading vehicles…</span>
             </div>
           ) : vehicles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <p className="text-lg font-medium text-gray-900">
-                No vehicles found
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                Add a vehicle to get started.
-              </p>
+              <p className="text-lg font-medium text-gray-900">No vehicles found</p>
+              <p className="mt-1 text-sm text-gray-500">Add a vehicle to get started.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    {[
-                      "Brand",
-                      "Model",
-                      "Year",
-                      "Plate Number",
-                      "Type",
-                      "Status",
-                      "Rate / Day",
-                      "Actions",
-                    ].map((col) => (
+                    {["Brand", "Model", "Year", "Plate Number", "Type", "Status", "Rate / Day", "Actions"].map((col) => (
                       <th
                         key={col}
                         className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500"
@@ -79,7 +75,12 @@ export default function VehiclesPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {vehicles.map((vehicle) => (
-                    <VehicleRow key={vehicle.car_id} vehicle={vehicle} />
+                    <VehicleRow
+                      key={vehicle.car_id}
+                      vehicle={vehicle}
+                      onEdit={() => setEditTarget(vehicle)}
+                      onDelete={() => setDeleteTarget(vehicle)}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -87,28 +88,52 @@ export default function VehiclesPage() {
           )}
         </div>
       </div>
+
+      {/* Add modal */}
+      {addOpen && (
+        <VehicleModal
+          onClose={() => setAddOpen(false)}
+          onSuccess={() => { setAddOpen(false); fetchVehicles(); }}
+        />
+      )}
+
+      {/* Edit modal */}
+      {editTarget && (
+        <VehicleModal
+          vehicle={editTarget}
+          onClose={() => setEditTarget(null)}
+          onSuccess={() => { setEditTarget(null); fetchVehicles(); }}
+        />
+      )}
+
+      {/* Delete modal */}
+      {deleteTarget && (
+        <DeleteVehicleModal
+          vehicle={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onSuccess={() => { setDeleteTarget(null); fetchVehicles(); }}
+        />
+      )}
     </main>
   );
 }
 
-function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
+function VehicleRow({
+  vehicle,
+  onEdit,
+  onDelete,
+}: {
+  vehicle: Vehicle;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
   return (
     <tr className="hover:bg-gray-50 transition-colors">
-      <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">
-        {vehicle.brand}
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        {vehicle.model}
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        {vehicle.year}
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        {vehicle.plate_number}
-      </td>
-      <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        {vehicle.fuel_type}
-      </td>
+      <td className="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{vehicle.brand}</td>
+      <td className="whitespace-nowrap px-4 py-3 text-gray-700">{vehicle.model}</td>
+      <td className="whitespace-nowrap px-4 py-3 text-gray-700">{vehicle.year}</td>
+      <td className="whitespace-nowrap px-4 py-3 text-gray-700">{vehicle.plate_number}</td>
+      <td className="whitespace-nowrap px-4 py-3 text-gray-700">{vehicle.fuel_type}</td>
       <td className="whitespace-nowrap px-4 py-3">
         <StatusBadge status={vehicle.status} />
       </td>
@@ -117,10 +142,16 @@ function VehicleRow({ vehicle }: { vehicle: Vehicle }) {
       </td>
       <td className="whitespace-nowrap px-4 py-3">
         <div className="flex items-center gap-2">
-          <button className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition">
+          <button
+            onClick={onEdit}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition"
+          >
             Edit
           </button>
-          <button className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 transition">
+          <button
+            onClick={onDelete}
+            className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-1 transition"
+          >
             Delete
           </button>
         </div>
@@ -136,9 +167,7 @@ function StatusBadge({ status }: { status: Vehicle["status"] }) {
     maintenance: "bg-yellow-100 text-yellow-700",
   };
   return (
-    <span
-      className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${styles[status]}`}
-    >
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${styles[status]}`}>
       {status}
     </span>
   );
