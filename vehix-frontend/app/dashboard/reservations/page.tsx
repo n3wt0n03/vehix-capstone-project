@@ -191,7 +191,10 @@ function ReservationRow({
   const customerName = r.user
     ? `${r.user.first_name} ${r.user.last_name}`
     : "—";
-  const vehicleName = r.car ? `${r.car.brand} ${r.car.model}` : "—";
+  const firstLine = r.reservation_lines?.[0];
+  const vehicleName = firstLine?.car
+    ? `${firstLine.car.brand} ${firstLine.car.model}`
+    : "—";
   const style = STATUS_STYLES[r.status] ?? "bg-gray-100 text-gray-600";
 
   return (
@@ -206,13 +209,13 @@ function ReservationRow({
         {vehicleName}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        {formatDate(r.start_date)}
+        {firstLine?.start_date ? formatDate(firstLine.start_date) : "—"}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        {formatDate(r.end_date)}
+        {firstLine?.end_date ? formatDate(firstLine.end_date) : "—"}
       </td>
       <td className="whitespace-nowrap px-4 py-3 text-gray-700">
-        ₱{r.rental_price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+        ₱{(r.total ?? 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
       </td>
       <td className="whitespace-nowrap px-4 py-3">
         <span
