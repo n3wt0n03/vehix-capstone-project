@@ -110,15 +110,17 @@ export default function ReservationDetailPage() {
     );
   }
 
-  const { car, user: customer } = reservation;
+  const { user: customer } = reservation;
+  const firstLine = reservation.reservation_lines?.[0];
+  const car = firstLine?.car;
 
   const totalDays =
-    reservation.start_date && reservation.end_date
+    firstLine?.start_date && firstLine?.end_date
       ? Math.max(
           1,
           Math.ceil(
-            (new Date(reservation.end_date).getTime() -
-              new Date(reservation.start_date).getTime()) /
+            (new Date(firstLine.end_date).getTime() -
+              new Date(firstLine.start_date).getTime()) /
               86400000
           )
         )
@@ -226,17 +228,17 @@ export default function ReservationDetailPage() {
           <Section title="Booking Details">
             <DetailRow
               label="Start Date"
-              value={formatDate(reservation.start_date)}
+              value={firstLine?.start_date ? formatDate(firstLine.start_date) : "—"}
             />
             <DetailRow
               label="End Date"
-              value={formatDate(reservation.end_date)}
+              value={firstLine?.end_date ? formatDate(firstLine.end_date) : "—"}
             />
-            {reservation.start_time && (
-              <DetailRow label="Start Time" value={reservation.start_time} />
+            {firstLine?.start_time && (
+              <DetailRow label="Start Time" value={firstLine.start_time} />
             )}
-            {reservation.end_time && (
-              <DetailRow label="End Time" value={reservation.end_time} />
+            {firstLine?.end_time && (
+              <DetailRow label="End Time" value={firstLine.end_time} />
             )}
             <DetailRow
               label="Total Days"
@@ -244,7 +246,7 @@ export default function ReservationDetailPage() {
             />
             <DetailRow
               label="Total Price"
-              value={`₱${reservation.rental_price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`}
+              value={`₱${(reservation.total ?? 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`}
               highlight
             />
           </Section>
@@ -253,19 +255,15 @@ export default function ReservationDetailPage() {
           <Section title="Locations & Metadata">
             <DetailRow
               label="Pickup Location"
-              value={reservation.pickup_location}
+              value={firstLine?.pickup_location ?? "—"}
             />
             <DetailRow
               label="Drop-off Location"
-              value={reservation.dropoff_location}
+              value={firstLine?.dropoff_location ?? "—"}
             />
             <DetailRow
               label="Created At"
               value={formatDateTime(reservation.created_at)}
-            />
-            <DetailRow
-              label="Fee Paid"
-              value={reservation.is_reservation_fee_paid ? "Yes" : "No"}
             />
           </Section>
         </div>

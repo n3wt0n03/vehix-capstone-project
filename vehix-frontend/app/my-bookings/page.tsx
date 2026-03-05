@@ -90,12 +90,18 @@ export default function MyBookingsPage() {
 }
 
 function BookingCard({ reservation: r }: { reservation: Reservation }) {
-  const vehicleName = r.car
-    ? `${r.car.brand} ${r.car.model} ${r.car.year}`
+  const firstLine = r.reservation_lines?.[0];
+  const lineCount = r.reservation_lines?.length ?? 0;
+
+  const vehicleName = firstLine?.car
+    ? `${firstLine.car.brand} ${firstLine.car.model} ${firstLine.car.year}`
     : "Vehicle";
 
-  const formattedStart = formatDate(r.start_date);
-  const formattedEnd = formatDate(r.end_date);
+  const vehicleLabel =
+    lineCount > 1 ? `${vehicleName} +${lineCount - 1} more` : vehicleName;
+
+  const formattedStart = firstLine?.start_date ? formatDate(firstLine.start_date) : "—";
+  const formattedEnd = firstLine?.end_date ? formatDate(firstLine.end_date) : "—";
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white shadow-sm p-5">
@@ -108,19 +114,21 @@ function BookingCard({ reservation: r }: { reservation: Reservation }) {
             </p>
             <StatusBadge status={r.status} />
           </div>
-          <p className="text-sm font-medium text-gray-800">{vehicleName}</p>
+          <p className="text-sm font-medium text-gray-800">{vehicleLabel}</p>
           <p className="text-sm text-gray-500">
             {formattedStart} → {formattedEnd}
           </p>
-          <p className="text-xs text-gray-400">
-            {r.pickup_location} → {r.dropoff_location}
-          </p>
+          {firstLine && (
+            <p className="text-xs text-gray-400">
+              {firstLine.pickup_location} → {firstLine.dropoff_location}
+            </p>
+          )}
         </div>
 
         {/* Right */}
         <div className="shrink-0 text-right">
           <p className="text-lg font-bold text-gray-900">
-            ₱{r.rental_price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+            ₱{(r.total ?? 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
           </p>
           <p className="text-xs text-gray-400 mt-0.5">
             Booked {formatDate(r.created_at)}
