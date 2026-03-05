@@ -188,7 +188,9 @@ function ReservationRow({
   reservation: Reservation;
   onView: () => void;
 }) {
-  const customerName = r.user
+  const customerName = r.renter_first_name
+    ? `${r.renter_first_name} ${r.renter_last_name}`
+    : r.user
     ? `${r.user.first_name} ${r.user.last_name}`
     : "—";
   const firstLine = r.reservation_lines?.[0];
