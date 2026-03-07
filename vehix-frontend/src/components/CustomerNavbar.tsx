@@ -140,12 +140,20 @@ export default function CustomerNavbar() {
                 )}
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition"
-              >
-                Login
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/register"
+                  className="rounded-lg border border-gray-300 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-gray-50 transition"
+                >
+                  Register
+                </Link>
+                <Link
+                  href="/login"
+                  className="rounded-lg bg-blue-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-700 transition"
+                >
+                  Login
+                </Link>
+              </div>
             )}
           </div>
 
@@ -190,13 +198,22 @@ export default function CustomerNavbar() {
                 </button>
               </>
             ) : (
-              <Link
-                href="/login"
-                onClick={() => setMenuOpen(false)}
-                className="w-fit rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Login
-              </Link>
+              <div className="flex flex-col gap-2">
+                <Link
+                  href="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-fit rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-gray-50"
+                >
+                  Register
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="w-fit rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Login
+                </Link>
+              </div>
             )}
           </div>
         </div>
