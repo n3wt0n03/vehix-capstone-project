@@ -12,9 +12,15 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { token } = getSession();
-    if (!token) {
+    const { token, user } = getSession();
+    if (!token || !user) {
       router.replace("/login");
+      return;
+    }
+    const role = (user.user_roles as { role_name?: string } | undefined)
+      ?.role_name;
+    if (role === "admin" || role === "staff") {
+      router.replace("/dashboard");
       return;
     }
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/src/lib/api";
 import { saveSession } from "@/src/lib/auth";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const registered = searchParams.get("registered");
@@ -23,10 +23,6 @@ export default function LoginPage() {
 
     try {
       const { data } = await api.post("/api/auth/login", { email, password });
-      console.log("[login] full response:", data);
-      console.log("[login] access_token:", data.access_token);
-      console.log("[login] user:", data.user);
-      console.log("[login] role:", data.user?.user_roles?.role_name);
 
       saveSession(data.access_token, data.user);
 
@@ -34,8 +30,11 @@ export default function LoginPage() {
       router.push(role === "admin" || role === "staff" ? "/dashboard" : "/");
     } catch (err: unknown) {
       const message =
+        (err as { response?: { data?: { error?: string; message?: string } } })
+          ?.response?.data?.error ??
         (err as { response?: { data?: { message?: string } } })?.response?.data
-          ?.message ?? "Invalid email or password.";
+          ?.message ??
+        "Invalid email or password.";
       setError(message);
     } finally {
       setLoading(false);
@@ -82,7 +81,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(""); }}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 placeholder="you@example.com"
               />
@@ -101,7 +100,7 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 placeholder="••••••••"
               />
@@ -128,5 +127,13 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

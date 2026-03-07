@@ -64,6 +64,7 @@ export default function RegisterPage() {
   function set(key: keyof Fields, value: string) {
     setFields((p) => ({ ...p, [key]: value }));
     if (fieldErrors[key]) setFieldErrors((p) => ({ ...p, [key]: undefined }));
+    if (apiError) setApiError("");
   }
 
   async function handleSubmit(e: React.FormEvent) {

@@ -146,8 +146,16 @@ export default function BookingPage() {
 
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
-    const { token } = getSession();
-    if (!token) router.replace("/login");
+    const { token, user } = getSession();
+    if (!token || !user) {
+      router.replace("/login");
+      return;
+    }
+    const role = (user.user_roles as { role_name?: string } | undefined)
+      ?.role_name;
+    if (role === "admin" || role === "staff") {
+      router.replace("/dashboard");
+    }
   }, [router]);
 
   /* Step 1 → 2 */
