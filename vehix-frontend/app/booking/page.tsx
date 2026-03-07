@@ -87,8 +87,7 @@ async function uploadFile(file: File, userId: string): Promise<string> {
     .from("documents")
     .upload(path, file);
   if (error) throw new Error(error.message);
-  const { data } = supabase.storage.from("documents").getPublicUrl(path);
-  return data.publicUrl;
+  return path; // store path, not public URL — signed URLs are generated on demand
 }
 
 function calcDays(start: string, end: string): number {
