@@ -31,7 +31,7 @@ export default function LoginPage() {
       saveSession(data.access_token, data.user);
 
       const role = data.user?.user_roles?.role_name as string | undefined;
-      router.push(role === "admin" || role === "staff" ? "/dashboard" : "/home");
+      router.push(role === "admin" || role === "staff" ? "/dashboard" : "/");
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data
