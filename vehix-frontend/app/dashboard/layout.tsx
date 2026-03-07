@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSession } from "@/src/lib/auth";
 import AdminNavbar from "@/src/components/AdminNavbar";
@@ -11,6 +11,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     const { token, user } = getSession();
@@ -21,9 +22,14 @@ export default function DashboardLayout({
     const role = (user.user_roles as { role_name?: string } | undefined)
       ?.role_name;
     if (role !== "admin" && role !== "staff") {
-      router.replace("/login");
+      router.replace("/");
+      return;
     }
+    setAuthorized(true);
   }, [router]);
+
+  // Render nothing until auth check completes — prevents flash of admin content
+  if (!authorized) return null;
 
   return (
     <>
