@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/src/lib/api";
+import type { AxiosError } from "axios";
 import { getSession } from "@/src/lib/auth";
 import type { Reservation } from "@/src/types/reservation";
 
@@ -26,6 +27,7 @@ export default function ReservationDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ url: string; label: string } | null>(null);
 
   const fetchReservation = useCallback(() => {
     setLoading(true);
@@ -137,7 +139,27 @@ export default function ReservationDetailPage() {
     reservation.status === "rejected" ||
     reservation.status === "completed";
 
+  // Collect all document URLs from reservation + lines
+  type Doc = { label: string; url: string };
+  const rawDocs: Doc[] = [];
+  if (reservation.renter_gov_id_url)
+    rawDocs.push({ label: "Renter Government ID", url: reservation.renter_gov_id_url });
+  if (reservation.renter_license_url)
+    rawDocs.push({ label: "Renter Driver's License", url: reservation.renter_license_url });
+  reservation.reservation_lines?.forEach((line, i) => {
+    const tag = reservation.reservation_lines.length > 1 ? ` (Vehicle ${i + 1})` : "";
+    if (line.driver_gov_id_url)
+      rawDocs.push({ label: `Driver Government ID${tag}`, url: line.driver_gov_id_url });
+    if (line.driver_license_url)
+      rawDocs.push({ label: `Driver's License${tag}`, url: line.driver_license_url });
+  });
+  // Deduplicate by URL so the same file doesn't get a duplicate key warning
+  const documents = Array.from(
+    new Map(rawDocs.map((d) => [d.url, d])).values()
+  );
+
   return (
+    <>
     <main className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
@@ -273,6 +295,40 @@ export default function ReservationDetailPage() {
           </Section>
         </div>
 
+        {/* Documents */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
+            Submitted Documents
+          </h2>
+          {documents.length === 0 ? (
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
+              No documents submitted yet.
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {documents.map((doc, index) => (
+                <button
+                  key={`doc-${index}`}
+                  onClick={() => setLightbox(doc)}
+                  className="group flex flex-col overflow-hidden rounded-xl border border-gray-200 text-left transition hover:border-blue-400 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <div className="relative h-36 w-full overflow-hidden bg-gray-100">
+                    <DocumentImage
+                      filePath={doc.url}
+                      alt={doc.label}
+                      className="h-full w-full object-cover transition group-hover:scale-105"
+                    />
+                  </div>
+                  <div className="px-3 py-2.5">
+                    <p className="text-xs font-medium text-gray-700 leading-snug">{doc.label}</p>
+                    <p className="mt-0.5 text-xs text-blue-500">Click to view</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Action buttons */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wider text-gray-500">
@@ -314,6 +370,127 @@ export default function ReservationDetailPage() {
         </div>
       </div>
     </main>
+
+    {lightbox && (
+      <Lightbox
+        url={lightbox.url}
+        label={lightbox.label}
+        onClose={() => setLightbox(null)}
+      />
+    )}
+  </>
+  );
+}
+
+/* ─── DocumentImage ──────────────────────────────────────────── */
+
+/**
+ * Fetches a short-lived signed URL from the backend then renders the image.
+ * Accepts either a raw storage path ("userId/123_file.jpg") or a legacy
+ * full public URL — the backend normalises both.
+ */
+function DocumentImage({
+  filePath,
+  alt,
+  className,
+}: {
+  filePath: string;
+  alt: string;
+  className?: string;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSrc(null);
+    setFailed(false);
+
+    console.log("[DocumentImage] file_path received:", filePath);
+
+    api
+      .post("/api/documents/signed-url", { file_path: filePath })
+      .then((res) => {
+        console.log("[DocumentImage] signed URL response:", res.data);
+        if (!cancelled) setSrc(res.data.signedUrl);
+      })
+      .catch((err: AxiosError) => {
+        console.error("[DocumentImage] signed URL error:", (err as AxiosError<{ error?: string }>).response?.data);
+        if (!cancelled) setFailed(true);
+      });
+
+    return () => { cancelled = true; };
+  }, [filePath]);
+
+  if (failed) {
+    return (
+      <div className={`flex items-center justify-center bg-red-50 text-xs text-red-400 ${className ?? ""}`}>
+        Failed to load
+      </div>
+    );
+  }
+
+  if (!src) {
+    return (
+      <div className={`flex items-center justify-center bg-gray-100 ${className ?? ""}`}>
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+      </div>
+    );
+  }
+
+  return <img src={src} alt={alt} className={className} />;
+}
+
+/* ─── Lightbox ───────────────────────────────────────────────── */
+
+function Lightbox({
+  url,
+  label,
+  onClose,
+}: {
+  url: string;
+  label: string;
+  onClose: () => void;
+}) {
+  const backdropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={backdropRef}
+      onClick={(e) => { if (e.target === backdropRef.current) onClose(); }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6"
+    >
+      <div className="relative flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+          <p className="text-sm font-semibold text-gray-900">{label}</p>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-gray-400 hover:text-gray-600 focus:outline-none"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        {/* Image */}
+        <div className="overflow-auto bg-gray-50 p-4 flex items-center justify-center">
+          <DocumentImage
+            filePath={url}
+            alt={label}
+            className="max-h-[70vh] max-w-full rounded-lg object-contain"
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
